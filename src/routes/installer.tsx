@@ -220,7 +220,8 @@ function Installer() {
         env: {
           'INSTALLDIR': installDir,
           'WINE': `${installDir}/lutris-GE-Proton8-26-x86_64/bin/wine`,
-          'WINEPREFIX': `${installDir}/prefix`
+          'WINEPREFIX': `${installDir}/prefix`,
+          'WINETRICKS_DOWNLOADER': 'curl',
         }
       });
       await runCommandAndAppendToConsole(winetricksCommand);

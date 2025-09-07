@@ -1,6 +1,6 @@
 [package]
 name = "nhl04-linux-installer"
-version = "0.1.0"
+version = "0.1.1"
 description = "App to streamline installing NHL04 on Linux"
 authors = ["you"]
 license = ""
