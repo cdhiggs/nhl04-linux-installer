@@ -7,38 +7,51 @@ abort () {
     echo "$1"
     exit 1
 }
-# Seems winetricks ie6 doesn't support DXImageTransform, so let's comment those out
+# Seems winetricks ie8 doesn't support DXImageTransform, so let's comment those out
 find "$INSTALLDIR/interface" -type f -name "*.js" -print0 | xargs -0 sed -i 's/oImage\.filters/\/\/oImage.filters/g' > /dev/null 2>&1
 if [ $? -ne 0 ] ; then
     abort "Failed to patch interface"
 fi
 echo "Patched DXImageTransform"
-# Project1.exe is just an external stat tracker, but it can't connect to the nhl2004.exe process in Wine, ss we'll comment out the executions
-find "$INSTALLDIR/interface" -type f -name "*.js" -print0 | xargs -0 sed -i 's/\.Run."Project1.exe"/\/\//g'
-if [ $? -ne 0 ] ; then
-    abort "Failed to patch interface"
-fi
-echo "Patched Project1.exe"
-echo "Patching complete."
+# # Project1.exe is just an external stat tracker, but it can't connect to the nhl2004.exe process in Wine, ss we'll comment out the executions
+# find "$INSTALLDIR/interface" -type f -name "*.js" -print0 | xargs -0 sed -i 's/\.Run."Project1.exe"/\/\//g'
+# if [ $? -ne 0 ] ; then
+#     abort "Failed to patch interface"
+# fi
+# echo "Patched Project1.exe"
+# echo "Patching complete."
 
 echo "Applying NHL web interface to installation"
-cp -r "$INSTALLDIR"/interface/* "$INSTALLDIR/prefix/drive_c/Program Files/EA SPORTS/NHL 2004/"
+cp -r "$INSTALLDIR"/interface/* "$INSTALLDIR/prefix/drive_c/Program Files (x86)/EA SPORTS/NHL 2004/"
 if [ $? -ne 0 ] ; then
     abort "Failed to apply NHL web interface"
 fi
 echo "Applying NHL 04 Rebuilt Launcher to installation"
-cp -r "$INSTALLDIR"/launcher/* "$INSTALLDIR/prefix/drive_c/Program Files/EA SPORTS/NHL 2004/"
+cp -r "$INSTALLDIR"/launcher/* "$INSTALLDIR/prefix/drive_c/Program Files (x86)/EA SPORTS/NHL 2004/"
 if [ $? -ne 0 ] ; then
     abort "Failed to apply launcher"
 fi
-echo "Applying d8vk"
-cp "$INSTALLDIR/d8vk/x32/d3d8.dll" "$INSTALLDIR/prefix/drive_c/Program Files/EA SPORTS/NHL 2004/"
+echo "Applying dxvk"
+
+cp "$INSTALLDIR/dxvk/dxvk-2.6.2/x64/d3d8.dll" "$INSTALLDIR/prefix/drive_c/windows/system32"
 if [ $? -ne 0 ] ; then
-    abort "Failed to apply d8vk"
+    abort "Failed to apply x64 dxvk"
+fi
+cp "$INSTALLDIR/dxvk/dxvk-2.6.2/x64/d3d9.dll" "$INSTALLDIR/prefix/drive_c/windows/system32"
+if [ $? -ne 0 ] ; then
+    abort "Failed to apply x64 dxvk"
+fi
+cp "$INSTALLDIR/dxvk/dxvk-2.6.2/x32/d3d8.dll" "$INSTALLDIR/prefix/drive_c/windows/syswow64"
+if [ $? -ne 0 ] ; then
+    abort "Failed to apply x32 dxvk"
+fi
+cp "$INSTALLDIR/dxvk/dxvk-2.6.2/x32/d3d9.dll" "$INSTALLDIR/prefix/drive_c/windows/syswow64"
+if [ $? -ne 0 ] ; then
+    abort "Failed to apply x32 dxvk"
 fi
 
 echo "Applying Xidi"
-cp "$INSTALLDIR/xidi/Xidi-v4.2.0/Win32/dinput.dll" "$INSTALLDIR/prefix/drive_c/Program Files/EA SPORTS/NHL 2004/"
+cp "$INSTALLDIR/xidi/Xidi-v4.3.1/Win32/dinput.dll" "$INSTALLDIR/prefix/drive_c/Program Files (x86)/EA SPORTS/NHL 2004/"
 if [ $? -ne 0 ] ; then
     abort "Failed to apply Xidi."
 fi
@@ -53,8 +66,8 @@ if [[ \$PRETTY_NAME == *\"SteamOS\" ]]; then
 fi
 
 DIR=\"\$(dirname \"\$(readlink -f \"\${BASH_SOURCE[0]}\")\")\"
-cd \"\$DIR/prefix/drive_c/Program Files/EA SPORTS/NHL 2004/\"
-WINEPREFIX=\"\$DIR/prefix\" WINEDEBUG=err+all,fixme-all \"\$DIR/lutris-GE-Proton8-26-x86_64/bin/wine\" ./Launcher.exe" >> "$INSTALLDIR/NHL 04 Rebuilt.sh"
+cd \"\$DIR/prefix/drive_c/Program Files (x86)/EA SPORTS/NHL 2004/\"
+WINEPREFIX=\"\$DIR/prefix\" WINEDEBUG=err-all,fixme-all \"\$DIR/wine-10.15-staging-tkg-amd64-wow64/bin/wine\" ./Launcher.exe" >> "$INSTALLDIR/NHL 04 Rebuilt.sh"
 chmod +x "$INSTALLDIR/NHL 04 Rebuilt.sh"
 if [ $? -ne 0 ] ; then
     abort "Failed to create launch script"
@@ -66,7 +79,7 @@ ln -s "./prefix/drive_c/users/$WINE_USER/Documents/NHL 2004" "$INSTALLDIR/NHL 20
 if [ $? -ne 0 ] ; then
     abort "Failed to create documents symlink"
 fi
-ln -s "./prefix/drive_c/Program Files/EA SPORTS/NHL 2004" "$INSTALLDIR/NHL 2004 Program Directory"
+ln -s "./prefix/drive_c/Program Files (x86)/EA SPORTS/NHL 2004" "$INSTALLDIR/NHL 2004 Program Directory"
 if [ $? -ne 0 ] ; then
     abort "Failed to create program symlink"
 fi
@@ -74,7 +87,7 @@ fi
 rm -rf "$INSTALLDIR/temp"
 rm -rf "$INSTALLDIR/disc1"
 rm -rf "$INSTALLDIR/disc2"
-rm -rf "$INSTALLDIR/d8vk"
+rm -rf "$INSTALLDIR/dxvk"
 rm -rf "$INSTALLDIR/xidi"
 rm -rf "$INSTALLDIR/xidi.zip"
 rm -rf "$INSTALLDIR/launcher"

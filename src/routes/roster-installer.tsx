@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { message, open } from "@tauri-apps/api/dialog";
-import { Command } from "@tauri-apps/api/shell";
+import { message, open } from "@tauri-apps/plugin-dialog";
+import { Command } from "@tauri-apps/plugin-shell";
 import { useNavigate } from "react-router-dom";
 import Hyperlink from "../components/hyperlink";
 import EllipsisLoader from "../components/ellipsis-loader";
@@ -63,28 +63,33 @@ function RosterInstaller() {
     }))
   }
 
-  const runCommandAndAppendToConsole = async (command: Command, throwOnErrorCode: boolean = true) => {
-    command.stdout.on('data', (data) => {
-      console.log(data);
-      reactSetRosterInstallerState(prevRosterInstallerState => ({
-        ...prevRosterInstallerState,
-        scriptStdOutAndErr: `${prevRosterInstallerState.scriptStdOutAndErr}${data}`,
-        latestStdOutOrErr: data,
-      }));
-    })
-    command.stderr.on('data', (data) => {
-      console.error(data);
-      reactSetRosterInstallerState(prevRosterInstallerState => ({
-        ...prevRosterInstallerState,
-        scriptStdOutAndErr: `${prevRosterInstallerState.scriptStdOutAndErr}${data}`,
-        latestStdOutOrErr: data,
-      }));
-    })
-    const commandResult = await command.execute();
-    if (commandResult.code !== 0 && throwOnErrorCode) {
-      throw new Error(`Command failed.\nLast message: ${latestStdOutOrErr}\nExit code: ${commandResult.code}`);
-    }
-    return commandResult;
+  const runCommandAndAppendToConsole = async (command: Command<string>, throwOnErrorCode: boolean = true): Promise<{code: number}> => {
+    return new Promise((resolve, reject) => {
+      command.stdout.on('data', (data) => {
+        console.log(data);
+        reactSetRosterInstallerState(prevInstallerState => ({
+          ...prevInstallerState,
+          scriptStdOutAndErr: `${prevInstallerState.scriptStdOutAndErr}${data}`,
+          latestStdOutOrErr: data,
+        }));
+      })
+      command.stderr.on('data', (data) => {
+        console.error(data);
+        reactSetRosterInstallerState(prevInstallerState => ({
+          ...prevInstallerState,
+          scriptStdOutAndErr: `${prevInstallerState.scriptStdOutAndErr}${data}`,
+          latestStdOutOrErr: data,
+        }));
+      })
+      command.on('close', (payload => {
+        if (payload.code !== 0 && throwOnErrorCode) {
+          reject({code: payload.code});
+        };
+        resolve({code: payload.code ?? 0});
+      }))
+      console.log(command); 
+      command.spawn();
+    });
   }
 
   const openInstallDirectory = async () => {
@@ -97,7 +102,7 @@ function RosterInstaller() {
       'No NHL 04 installation found to patch. Directory must contain the "NHL 04 Rebuilt.sh" executable.',
       {
         title: 'No NHL 04 installation found', 
-        type: 'error'
+        kind: 'error'
       },
     );
     setRosterInstallerState({
@@ -182,7 +187,7 @@ function RosterInstaller() {
     const extractAndInstallArchiveCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
       'x',
       archive,
-      `-o${installDir}/prefix/drive_c/Program Files/EA SPORTS/NHL 2004/`,
+      `-o${installDir}/prefix/drive_c/Program Files (x86)/EA SPORTS/NHL 2004/`,
       '-aoa',
     ]);
     return await runCommandAndAppendToConsole(extractAndInstallArchiveCommand);
@@ -193,7 +198,7 @@ function RosterInstaller() {
       'No NHL 04 installation selected',
       {
         title: 'No NHL 04 installation found', 
-        type: 'error'
+        kind: 'error'
       },
     ); 
 
@@ -210,13 +215,14 @@ function RosterInstaller() {
       'One or more archives needs to be selected.',
       {
         title: 'Archive selection needed', 
-        type: 'error'
+        kind: 'error'
       },
     );
     setRosterInstallerState({status: 'installing'});
     try {  
       await extractAndInstallArchive(menuFacesArchiveFile);
       await extractAndInstallArchive(inGameFacesArchiveFile);
+      await extractAndInstallArchive(cyberFacesArchiveFile)
       await extractAndInstallArchive(arenaArchiveFile);
       await extractAndInstallArchive(jerseysArchiveFile);
       await extractAndInstallArchive(masksArchiveFile);
@@ -229,15 +235,6 @@ function RosterInstaller() {
         '-aoa'
       ]);
       await runCommandAndAppendToConsole(rosterExtractCommand);
-
-      const cyberFacesExtractCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
-        'x',
-        cyberFacesArchiveFile,
-        `-o${installDir}/gamedata`,
-        '-aoa'
-      ]);
-      await runCommandAndAppendToConsole(cyberFacesExtractCommand);
-
 
       const pbpExtractCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
         'x',
@@ -257,7 +254,7 @@ function RosterInstaller() {
         'Roster installation complete.',
         {
           title: 'Roster installation complete', 
-          type: 'info',
+          kind: 'info',
         },
       );
     }
@@ -269,7 +266,7 @@ function RosterInstaller() {
         `Installation failed:\n${e}`,
         {
           title: 'Installation failed', 
-          type: 'error'
+          kind: 'error'
         },
       )
     }
@@ -335,19 +332,19 @@ function RosterInstaller() {
             Select the cyberfaces archive downloaded from step 4.
           </p>
           <p>
-            <button onClick={openCyberFacesArchiveFile}>face2004-jedeash.rar</button> {cyberFacesArchiveFile || 'Not selected'}
+            <button onClick={openCyberFacesArchiveFile}>Cyberface_20241002.zip</button> {cyberFacesArchiveFile || 'Not selected'}
           </p>
           <p>
             Select the arena archive from downloaded step 5.
           </p>
           <p>
-            <button onClick={openArenaArchiveFile}>Arenas.rar</button> {arenaArchiveFile || 'Not selected'}
+            <button onClick={openArenaArchiveFile}>Arena_20250218.rar</button> {arenaArchiveFile || 'Not selected'}
           </p>
           <p>
             Select the jerseys archive downloaded from step 7.
           </p>
           <p>
-            <button onClick={openJerseysArchiveFile}>jerseys.rar</button> {jerseysArchiveFile || 'Not selected'}
+            <button onClick={openJerseysArchiveFile}>Jersey_20250218_4NationsUpdate</button> {jerseysArchiveFile || 'Not selected'}
           </p>
           <p>
             Select the masks archive downloaded from step 8.
@@ -359,7 +356,7 @@ function RosterInstaller() {
             Select the commentary/play-by-play archive downloaded from step 9.
           </p>
           <p>
-            <button onClick={openPbpArchiveFile}>pbp.7z</button> {pbpArchiveFile || 'Not selected'}
+            <button onClick={openPbpArchiveFile}>Main Mod - Complete PBP-2024-04-30.7z</button> {pbpArchiveFile || 'Not selected'}
           </p>
           <p>
             Select the goal horns archive downloaded from step 10.

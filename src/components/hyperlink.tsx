@@ -1,4 +1,4 @@
-import { Command } from "@tauri-apps/api/shell";
+import { Command } from "@tauri-apps/plugin-shell";
 
 export interface HyperlinkProps {
   children: React.ReactNode,
@@ -11,7 +11,7 @@ function Hyperlink({children, href}: HyperlinkProps) {
     const openCommand = Command.sidecar('.sidecar/nhl-04-xdg-open', [
       href
     ]);
-    await openCommand.execute();
+    await openCommand.spawn();
   }
   return (
     <a href={href} onClick={

@@ -24,38 +24,24 @@ if ! [ -f "$INSTALLDIR/disc2/SAR.exe" ] ; then
     abort_and_cleanup "Disc 2 is invalid. Missing \"SAR.exe\", exiting."
 fi
 
-echo "Downloading Wine-GE"
-curl -o "$INSTALLDIR/temp/winege.tar.xz" -L https://github.com/GloriousEggroll/wine-ge-custom/releases/download/GE-Proton8-26/wine-lutris-GE-Proton8-26-x86_64.tar.xz
+echo "Downloading Wine-TkG"
+curl -o "$INSTALLDIR/temp/wine.tar.xz" -L https://github.com/Kron4ek/Wine-Builds/releases/download/10.15/wine-10.15-staging-tkg-amd64-wow64.tar.xz
 if [ $? -ne 0 ] ; then
-    abort_and_cleanup "Failed to download Wine-GE"
+    abort_and_cleanup "Failed to download Wine-TkG"
 fi
-echo "Extracting Wine-GE"
-tar -xf "$INSTALLDIR/temp/winege.tar.xz" -C "$INSTALLDIR"
+echo "Extracting Wine-TkG"
+tar -xf "$INSTALLDIR/temp/wine.tar.xz" -C "$INSTALLDIR"
 
-echo "Downloading d8vk"
-curl -o "$INSTALLDIR/temp/d8vk.tar.gz" -L https://github.com/AlpyneDreams/d8vk/releases/download/d8vk-v1.0/d8vk-v1.0.tar.gz
+echo "Downloading dxvk"
+curl -o "$INSTALLDIR/temp/dxvk.tar.gz" -L https://github.com/doitsujin/dxvk/releases/download/v2.6.2/dxvk-2.6.2.tar.gz
 if [ $? -ne 0 ] ; then
-    abort_and_cleanup "Failed to download d8vk"
+    abort_and_cleanup "Failed to download dxvk"
 fi
-mkdir "$INSTALLDIR/d8vk"
-echo "Extracting d8vk"
-tar -xf "$INSTALLDIR/temp/d8vk.tar.gz" -C "$INSTALLDIR/d8vk"
+mkdir "$INSTALLDIR/dxvk"
+echo "Extracting dxvk"
+tar -xf "$INSTALLDIR/temp/dxvk.tar.gz" -C "$INSTALLDIR/dxvk"
 
-WINEDIR="$INSTALLDIR/lutris-GE-Proton8-26-x86_64/bin"
-
-# Add registry entry to treat drives as CD-ROMS(tricks the Installer to think that the CDs are inserted)
-# Also add dll overrides for d8vk and Xidi
-CDROM_REGEDIT="\
-REGEDIT4\n\
-\n\
-[HKEY_LOCAL_MACHINE\\Software\\Wine\\Drives]\n\
-\"t:\"=\"cdrom\"\n\
-\"u:\"=\"cdrom\"\n\
-\n\
-[HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides]\n\
-\"d3d8\"=\"native,builtin\"\n\
-\"dinput\"=\"native,builtin\""
-echo -e "$CDROM_REGEDIT" > "$INSTALLDIR/temp/cdrom.reg"
+WINEDIR="$INSTALLDIR/wine-10.15-staging-tkg-amd64-wow64/bin"
 
 echo "Initializing Wine prefix"
 
@@ -67,8 +53,7 @@ if [[ $PRETTY_NAME == *"SteamOS" ]]; then
     echo "Steam OS workarounds applied"
 fi
 
-# NHL 04 does not work on a 64bit prefix because ie6 breaks
-WINEPREFIX="$INSTALLDIR/prefix" WINEARCH=win32 "$WINEDIR/wineboot" -i
+WINEPREFIX="$INSTALLDIR/prefix" WINEDLLOVERRIDES=mscoree=d "$WINEDIR/wineboot" -i
 echo "Wineboot"
 
 WINEPREFIX="$INSTALLDIR/prefix" "$WINEDIR/wine" reg add "HKEY_LOCAL_MACHINE\\Software\\Wine\\Drives" /v t: /t REG_SZ /d cdrom
@@ -86,7 +71,17 @@ if [ $? -ne 0 ] ; then
     abort_and_cleanup "Failed to update registry, exiting."
 fi
 
+WINEPREFIX="$INSTALLDIR/prefix" "$WINEDIR/wine" reg add "HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides" /v d3d9 /t REG_SZ /d native,builtin
+if [ $? -ne 0 ] ; then
+    abort_and_cleanup "Failed to update registry, exiting."
+fi
+
 WINEPREFIX="$INSTALLDIR/prefix" "$WINEDIR/wine" reg add "HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides" /v dinput /t REG_SZ /d native,builtin
+if [ $? -ne 0 ] ; then
+    abort_and_cleanup "Failed to update registry, exiting."
+fi
+
+WINEPREFIX="$INSTALLDIR/prefix" "$WINEDIR/wine" reg add "HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides" /v mscoree /t REG_SZ /d disabled
 if [ $? -ne 0 ] ; then
     abort_and_cleanup "Failed to update registry, exiting."
 fi

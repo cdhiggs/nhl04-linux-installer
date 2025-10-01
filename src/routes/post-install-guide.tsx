@@ -38,12 +38,6 @@ function PostInstallGuide() {
         out the page for additional information on the project.
       </p>
       <p>
-        Check out <Hyperlink href="https://www.tapatalk.com/groups/nhl04rebuilt/drgullen-s-tweaks-v3-t6260.html"><i>Drgullen's in game tweaks</i></Hyperlink> mod
-        for a gameplay and physics revamp. This project was tested using the v2 version of this mod through an 82-game season & playoffs.
-        The v2 version of the mod can be installed under the <i>Get Mods</i> tab of in <i>Mods</i> section the NHL04 Rebuilt launcher.
-        V3 requires additional steps as detailed in the linked page.
-      </p>
-      <p>
         Gamepad support is provided by <Hyperlink href="https://github.com/samuelgr/Xidi">Xidi</Hyperlink>.
         Providing analog joystick support and button mapping for <i>Steam Input</i> compatible controllers. 
         Controllers will have to be manually configured in the NHL 2004 application.
@@ -66,15 +60,26 @@ function PostInstallGuide() {
       </p>
       <ul>
         <li>
-          Use "Full Screen Window" instead of "Full Screen Exclusive" in the Launcher settings.
+          The first "Launch" of the game will close automatically. This is normal and will not happen after the first launch of an installation.
+        </li>
+        <li>
+          Do not use the "XInput" mod that is available for download in the launcher.
           <ul>
             <li>
-              Fullscreen exclusive shifts the main menu from the actual interactable area
+              Functionality is already provided by Xidi. The "XInput" mod does not work in a Wine environment and breaks Xidi.
             </li>
           </ul>
         </li>
         <li>
           While configuring controllers, the unbound controls have a smaller clickable area when rebinding.
+        </li>
+        <li>
+          Use "Full Screen Exclusive" with VSync in the launcher settings.
+          <ul>
+            <li>
+              Reduces power usage from drawing extra frames.
+            </li>
+          </ul>
         </li>
         <li>
           Restart the NHL 2004 app after each game.

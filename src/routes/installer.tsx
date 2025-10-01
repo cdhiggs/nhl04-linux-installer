@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { message, open } from "@tauri-apps/api/dialog";
-import { Command } from "@tauri-apps/api/shell";
-import { internetExplorerInstaller, nhlInstallerCodeEntry, nhlInstallerFlashPrompt, nhlInstallerInsertCdRom, nhlInstallerInstalling, nhlInstallerLanguageSelect, nhlInstallerOnlineService, nhlInstallerProductRegistration, nhlInstallerUserType } from "../utils/nhl-installer-assets";
+import { message, open } from "@tauri-apps/plugin-dialog";
+import { Command } from "@tauri-apps/plugin-shell";
+import { nhlInstallerCodeEntry, nhlInstallerFlashPrompt, nhlInstallerInstalling, nhlInstallerLanguageSelect, nhlInstallerOnlineService, nhlInstallerProductRegistration, nhlInstallerUserType } from "../utils/nhl-installer-assets";
 import { Link, useNavigate } from "react-router-dom";
-import { readDir } from "@tauri-apps/api/fs";
+import { readDir } from "@tauri-apps/plugin-fs";
 import Hyperlink from "../components/hyperlink";
 import EllipsisLoader from "../components/ellipsis-loader";
 
@@ -15,7 +15,7 @@ interface InstallerState {
   showConsole: boolean,
   status: 'prereq' | 'install' | 'installing' | 'patching' | 'complete' | 'error',
   scriptStdOutAndErr: string,
-  latestStdOutOrErr: '',
+  latestStdOutOrErr: string,
 }
 function Installer() {
   const navigate = useNavigate();
@@ -55,7 +55,7 @@ function Installer() {
       'The installation directory selected is not empty. Please select an empty directory.', 
       {
         title: 'Non-empty directory', 
-        type: 'error'
+        kind: 'error'
       },
     );
     setInstallerState({
@@ -88,28 +88,41 @@ function Installer() {
   }
 
 
-  const runCommandAndAppendToConsole = async (command: Command, throwOnErrorCode: boolean = true) => {
-    command.stdout.on('data', (data) => {
-      console.log(data);
-      reactSetInstallerState(prevInstallerState => ({
-        ...prevInstallerState,
-        scriptStdOutAndErr: `${prevInstallerState.scriptStdOutAndErr}${data}`,
-        latestStdOutOrErr: data,
-      }));
-    })
-    command.stderr.on('data', (data) => {
-      console.error(data);
-      reactSetInstallerState(prevInstallerState => ({
-        ...prevInstallerState,
-        scriptStdOutAndErr: `${prevInstallerState.scriptStdOutAndErr}${data}`,
-        latestStdOutOrErr: data,
-      }));
-    })
-    const commandResult = await command.execute();
-    if (commandResult.code !== 0 && throwOnErrorCode) {
-      throw new Error(`Command failed.\nLast message: ${latestStdOutOrErr}\nExit code: ${commandResult.code}`);
-    }
-    return commandResult;
+  const runCommandAndAppendToConsole = async (command: Command<string>, throwOnErrorCode: boolean = true, resolveOnLogPattern?: RegExp): Promise<{code: number}> => {
+    return new Promise((resolve, reject) => {
+      command.stdout.on('data', (data) => {
+        console.log(data);
+        reactSetInstallerState(prevInstallerState => ({
+          ...prevInstallerState,
+          scriptStdOutAndErr: `${prevInstallerState.scriptStdOutAndErr}${data}`,
+          latestStdOutOrErr: data,
+        }));
+        if (resolveOnLogPattern?.test(data)) {
+          resolve({code: 0});
+        }
+      })
+      command.stderr.on('data', (data) => {
+        console.error(data);
+        reactSetInstallerState(prevInstallerState => ({
+          ...prevInstallerState,
+          scriptStdOutAndErr: `${prevInstallerState.scriptStdOutAndErr}${data}`,
+          latestStdOutOrErr: data,
+        }));
+        if (resolveOnLogPattern?.test(data)) {
+          resolve({code: 0});
+        }
+      })
+      command.on('close', (payload => {
+        if (payload.code !== 0 && throwOnErrorCode) {
+          reject({code: payload.code});
+        }
+        else if (!resolveOnLogPattern) {
+          resolve({code: payload.code ?? 0});
+        }
+      }))
+      console.log(command); 
+      command.spawn();
+    });
   }
 
   async function install() {
@@ -122,7 +135,14 @@ function Installer() {
       'A file/directory is missing from the selection.', 
       {
         title: 'Missing file/directory', 
-        type: 'error'
+        kind: 'error'
+      },
+    );
+    if((await readDir(installDir)).length > 0) return await message(
+      'The installation directory selected is not empty. Please select an empty directory.', 
+      {
+        title: 'Non-empty directory', 
+        kind: 'error'
       },
     );
     setInstallerState({status: 'installing'})
@@ -148,7 +168,7 @@ function Installer() {
         '-aoa',
       ]);
       await runCommandAndAppendToConsole(nhlInterfaceExtractCommand);
-      const nhlLauncherDownloadCommand = new Command('curl', [
+      const nhlLauncherDownloadCommand = Command.sidecar('.sidecar/nhl-04-curl', [
         '-o',
         `${installDir}/launcher.zip`,
         '-L',
@@ -163,11 +183,11 @@ function Installer() {
       ]);
       await runCommandAndAppendToConsole(nhlLauncherExtractCommand);
   
-      const xidiDownloadCommand = new Command('curl', [
+      const xidiDownloadCommand = Command.sidecar('.sidecar/nhl-04-curl', [
         '-o',
         `${installDir}/xidi.zip`,
         '-L',
-        'https://github.com/samuelgr/Xidi/releases/download/v4.2.0/Xidi-v4.2.0.zip'
+        'https://github.com/samuelgr/Xidi/releases/download/v4.3.1/Xidi-v4.3.1.zip'
       ]);
       await runCommandAndAppendToConsole(xidiDownloadCommand);
       const xidiExtractCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
@@ -181,7 +201,7 @@ function Installer() {
       const nhlInstallCommand = Command.sidecar('.sidecar/nhl-04-install', [
         installDir,
       ]);
-      await runCommandAndAppendToConsole(nhlInstallCommand);
+      await runCommandAndAppendToConsole(nhlInstallCommand, true, /e5d141\.tmp/g);
     }
     catch (e) {
       setInstallerState({
@@ -191,37 +211,26 @@ function Installer() {
         `Installation failed:\n${e}`,
         {
           title: 'Installation failed', 
-          type: 'error'
+          kind: 'error'
         },
       )
+      console.error(e);
     }
-  }
 
-  async function patch() {
-    if (status !== 'installing' || installDir === undefined) return;
-    const nhlVerifyInstallCommand = Command.sidecar('.sidecar/nhl-04-verify-install', [
-      installDir,
-    ])
-    if ((await runCommandAndAppendToConsole(nhlVerifyInstallCommand, false)).code !== 0) return await message(
-      'No NHL 04 installation found to patch. "Typical User" must be selected during the installer process. The installation may still be in progress.',
-      {
-        title: 'No NHL 04 installation found', 
-        type: 'error'
-      },
-    );
+    // Patch the installation
     setInstallerState({status: 'patching'})
     try {
       const winetricksCommand = Command.sidecar('.sidecar/winetricks', [
-        'ie6',
-        'dxtrans',
-        'urlmon',
-        'wsh57'
+        'vb6run', // Needed for unlimited replay patch
+        'wsh57', // Needed for menu
+        'ie8', // Needed for menu
       ], {
         env: {
           'INSTALLDIR': installDir,
-          'WINE': `${installDir}/lutris-GE-Proton8-26-x86_64/bin/wine`,
+          'WINE': `${installDir}/wine-10.15-staging-tkg-amd64-wow64/bin/wine`,
           'WINEPREFIX': `${installDir}/prefix`,
           'WINETRICKS_DOWNLOADER': 'curl',
+          'W_OPT_UNATTENDED': '1',
         }
       });
       await runCommandAndAppendToConsole(winetricksCommand);
@@ -234,7 +243,7 @@ function Installer() {
         'Installation and patching complete. Launch "NHL 04 Rebuilt.sh" in the install directory.',
         {
           title: 'Installation complete', 
-          type: 'info',
+          kind: 'info',
         },
       );
     }    
@@ -246,7 +255,7 @@ function Installer() {
         `Patching failed:\n${e}`,
         {
           title: 'Patching failed', 
-          type: 'error'
+          kind: 'error'
         },
       )
     }
@@ -291,8 +300,8 @@ function Installer() {
           </p>
           <h2>Prerequisites</h2>
           <p>
-            This installer will setup a new Wine prefix using <Hyperlink href="https://github.com/GloriousEggroll/wine-ge-custom/releases">Wine-GE.</Hyperlink> Wine 
-            and Wine-GE have dependencies that can be installed by following <Hyperlink href="https://www.gloriouseggroll.tv/how-to-get-out-of-wine-dependency-hell/">this guide.</Hyperlink> Your
+            This installer will setup a new Wine prefix using <Hyperlink href="https://github.com/Kron4ek/Wine-Builds/releases/">Wine-TkG.</Hyperlink> Wine 
+            and Wine-TkG have dependencies that can be installed by following <Hyperlink href="https://www.gloriouseggroll.tv/how-to-get-out-of-wine-dependency-hell/">this guide.</Hyperlink> Your
             GPU needs Vulkan support and you need to have <Hyperlink href="https://github.com/lutris/docs/blob/master/InstallingDrivers.md">Vulkan drivers installed.</Hyperlink> Steam
             Deck users on SteamOS will already have these dependencies installed. The installation process will require at least 6GiB of storage, and will download about 1GiB of data. The final installation is 2.4 GiB.
           </p>
@@ -311,10 +320,10 @@ function Installer() {
           </p>
           <ul>
             <li><Hyperlink href="https://www.tapatalk.com/groups/nhl04rebuilt/04-launcher-v2-download-t5286.html">NHL04 Rebuilt Launcher v2</Hyperlink></li>
-            <li><Hyperlink href="https://github.com/GloriousEggroll/wine-ge-custom/releases/tag/GE-Proton8-26">Wine-GE-8-26</Hyperlink> to run NHL 2004 on Linux. (wine or wine-staging will not work)</li>
-            <li><Hyperlink href="https://github.com/AlpyneDreams/d8vk/releases/tag/d8vk-v1.0">d8vk v1.0</Hyperlink> DirectX 8 to Vulkan translation layer to render NHL 2004 on Linux.</li>
-            <li><Hyperlink href="https://github.com/samuelgr/Xidi/releases/tag/v4.2.0">Xidi v4.2.0</Hyperlink> Xinput to DirectInput wrapper for <i>Steam Input</i> gamepad support.</li>
-            <li>Internet Explorer 6 installer required by NHL 2004's main menu.</li>
+            <li><Hyperlink href="https://github.com/Kron4ek/Wine-Builds/releases/tag/10.15">Wine 10.15 with TKG patches</Hyperlink> to run NHL 2004 on Linux. (wine or wine-staging will not work)</li>
+            <li><Hyperlink href="https://github.com/doitsujin/dxvk/releases/tag/v2.6.2">dxvk v2.6.2</Hyperlink> DirectX 8 to Vulkan translation layer to render NHL 2004 on Linux.</li>
+            <li><Hyperlink href="https://github.com/samuelgr/Xidi/releases/tag/v4.3.1">Xidi v4.3.1</Hyperlink> Xinput to DirectInput wrapper for <i>Steam Input</i> gamepad support.</li>
+            <li>Internet Explorer 8 installer required by NHL 2004's main menu.</li>
           </ul>
         </>
       }
@@ -366,12 +375,6 @@ function Installer() {
           <p>
             The installer may take some time to install.
           </p>
-          <img src={nhlInstallerInsertCdRom} alt="NHL installer's missing CD-ROM error." />
-          <p>
-            You will see an error <i>"Cannot locate the CD-ROM"</i>. This is fine. Click <i>OK</i> then click <i>Patch</i>, below.
-            Do not click <i>Patch</i> until you receive the <i>"Cannot locate the CD-ROM"</i> error.
-          </p>
-          <button onClick={patch}>Patch</button>
         </>
       }
       {status === 'patching' &&
@@ -379,8 +382,6 @@ function Installer() {
           <p>
             The installation is now being patched to work with Wine.
           </p>
-          <img src={internetExplorerInstaller} alt="Screenshot of Internet Explorer 6 installer." />
-          <p>Follow through the Internet Explorer 6 installation. Do not click <i>Cancel</i>.</p>
         </>
       }
       {status === 'complete' &&
