@@ -1,6 +1,6 @@
 # NHL 04 on Linux Installer
 
-This installer will guide users through setting up NHL 04 for PC on Linux. Download the AppImage [here](https://github.com/amanojeremie/nhl04-linux-installer/releases/tag/v0.2.0).
+This installer will guide users through setting up NHL 04 for PC on Linux. Download the AppImage [here](https://github.com/amanojeremie/nhl04-linux-installer/releases/tag/v0.3.0).
 
 ## Purpose
 
@@ -40,5 +40,5 @@ npm install
 npm run tauri build
 ```
 
-A Dockerfile is provided to build a redistributable for Linux environments. It's based off of Ubuntu 20.04 to provide a low GLIBC version requirement.
+A Dockerfile is provided to build a redistributable for Linux environments. It's based off of Ubuntu 22.04 to provide a low GLIBC version requirement.
 A workaround for [this](https://github.com/tauri-apps/tauri/issues/1355) Tauri issue.

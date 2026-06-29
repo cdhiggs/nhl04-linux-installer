@@ -28,7 +28,7 @@
   },
   "productName": "nhl04-linux-installer",
   "mainBinaryName": "nhl04-linux-installer",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "identifier": "com.jeremieamano.nhl04",
   "plugins": {},
   "app": {
