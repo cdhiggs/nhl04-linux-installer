@@ -33,19 +33,19 @@ if [ $? -ne 0 ] ; then
 fi
 echo "Applying dxvk"
 
-cp "$INSTALLDIR/dxvk/dxvk-2.6.2/x64/d3d8.dll" "$INSTALLDIR/prefix/drive_c/windows/system32"
+cp "$INSTALLDIR/dxvk/dxvk-2.7.1/x64/d3d8.dll" "$INSTALLDIR/prefix/drive_c/windows/system32"
 if [ $? -ne 0 ] ; then
     abort "Failed to apply x64 dxvk"
 fi
-cp "$INSTALLDIR/dxvk/dxvk-2.6.2/x64/d3d9.dll" "$INSTALLDIR/prefix/drive_c/windows/system32"
+cp "$INSTALLDIR/dxvk/dxvk-2.7.1/x64/d3d9.dll" "$INSTALLDIR/prefix/drive_c/windows/system32"
 if [ $? -ne 0 ] ; then
     abort "Failed to apply x64 dxvk"
 fi
-cp "$INSTALLDIR/dxvk/dxvk-2.6.2/x32/d3d8.dll" "$INSTALLDIR/prefix/drive_c/windows/syswow64"
+cp "$INSTALLDIR/dxvk/dxvk-2.7.1/x32/d3d8.dll" "$INSTALLDIR/prefix/drive_c/windows/syswow64"
 if [ $? -ne 0 ] ; then
     abort "Failed to apply x32 dxvk"
 fi
-cp "$INSTALLDIR/dxvk/dxvk-2.6.2/x32/d3d9.dll" "$INSTALLDIR/prefix/drive_c/windows/syswow64"
+cp "$INSTALLDIR/dxvk/dxvk-2.7.1/x32/d3d9.dll" "$INSTALLDIR/prefix/drive_c/windows/syswow64"
 if [ $? -ne 0 ] ; then
     abort "Failed to apply x32 dxvk"
 fi
@@ -67,7 +67,7 @@ fi
 
 DIR=\"\$(dirname \"\$(readlink -f \"\${BASH_SOURCE[0]}\")\")\"
 cd \"\$DIR/prefix/drive_c/Program Files (x86)/EA SPORTS/NHL 2004/\"
-WINEPREFIX=\"\$DIR/prefix\" WINEDEBUG=err-all,fixme-all \"\$DIR/wine-10.15-staging-tkg-amd64-wow64/bin/wine\" ./Launcher.exe" >> "$INSTALLDIR/NHL 04 Rebuilt.sh"
+WINEPREFIX=\"\$DIR/prefix\" WINEDEBUG=err-all,fixme-all \"\$DIR/wine-11.11-staging-tkg-amd64-wow64/bin/wine\" ./Launcher.exe" >> "$INSTALLDIR/NHL 04 Rebuilt.sh"
 chmod +x "$INSTALLDIR/NHL 04 Rebuilt.sh"
 if [ $? -ne 0 ] ; then
     abort "Failed to create launch script"

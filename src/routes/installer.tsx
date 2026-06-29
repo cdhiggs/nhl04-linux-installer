@@ -201,7 +201,7 @@ function Installer() {
       const nhlInstallCommand = Command.sidecar('.sidecar/nhl-04-install', [
         installDir,
       ]);
-      await runCommandAndAppendToConsole(nhlInstallCommand, true, /e5d141\.tmp/g);
+      await runCommandAndAppendToConsole(nhlInstallCommand, true, /Successfully registered DLL(.*)BEControls_pc_z.dll/g);
     }
     catch (e) {
       setInstallerState({
@@ -227,7 +227,7 @@ function Installer() {
       ], {
         env: {
           'INSTALLDIR': installDir,
-          'WINE': `${installDir}/wine-10.15-staging-tkg-amd64-wow64/bin/wine`,
+          'WINE': `${installDir}/wine-11.11-staging-tkg-amd64-wow64/bin/wine`,
           'WINEPREFIX': `${installDir}/prefix`,
           'WINETRICKS_DOWNLOADER': 'curl',
           'W_OPT_UNATTENDED': '1',
@@ -307,10 +307,10 @@ function Installer() {
           </p>
           <p>
             You will need NHL 2004 for PC's disc 1 and 2 as .iso files and the 16 digit license associated with your copy. However you get these is up to you. You will also need the&nbsp;
-            <Hyperlink href="https://www.tapatalk.com/groups/nhl04rebuilt/2021-nhl-com-interface-t4324.html">
-              2021 NHL.com interface
+            <Hyperlink href="https://www.tapatalk.com/groups/nhl04rebuilt/nhl04-rebuilt-2017-2018-links-installation-info-t13.html">
+              ESPN Interface from step 1a.
             </Hyperlink>
-            &nbsp;which can be can be downloaded <Hyperlink href="https://www.mediafire.com/file/gi2qldpup4lxym8/2021_NHL.com_Interface.rar/file">here</Hyperlink>.
+            &nbsp;which can be can be downloaded <Hyperlink href="https://www.mediafire.com/file/1emb324usol6an0/Interface_20240923.zip/file">here</Hyperlink>.
             Once the prerequisites are met, the installation process will take about 10-15 minutes at most, though some manual interactions will be required.
           </p>
           <button onClick={() => setInstallerState({status: 'install'})}>Next</button>
@@ -320,8 +320,8 @@ function Installer() {
           </p>
           <ul>
             <li><Hyperlink href="https://www.tapatalk.com/groups/nhl04rebuilt/04-launcher-v2-download-t5286.html">NHL04 Rebuilt Launcher v2</Hyperlink></li>
-            <li><Hyperlink href="https://github.com/Kron4ek/Wine-Builds/releases/tag/10.15">Wine 10.15 with TKG patches</Hyperlink> to run NHL 2004 on Linux. (wine or wine-staging will not work)</li>
-            <li><Hyperlink href="https://github.com/doitsujin/dxvk/releases/tag/v2.6.2">dxvk v2.6.2</Hyperlink> DirectX 8 to Vulkan translation layer to render NHL 2004 on Linux.</li>
+            <li><Hyperlink href="https://github.com/Kron4ek/Wine-Builds/releases/tag/11.11">Wine 11.11 with TKG patches</Hyperlink> to run NHL 2004 on Linux. (wine or wine-staging will not work)</li>
+            <li><Hyperlink href="https://github.com/doitsujin/dxvk/releases/tag/v2.7.1">dxvk v2.7.1</Hyperlink> DirectX 8 to Vulkan translation layer to render NHL 2004 on Linux.</li>
             <li><Hyperlink href="https://github.com/samuelgr/Xidi/releases/tag/v4.3.1">Xidi v4.3.1</Hyperlink> Xinput to DirectInput wrapper for <i>Steam Input</i> gamepad support.</li>
             <li>Internet Explorer 8 installer required by NHL 2004's main menu.</li>
           </ul>
@@ -342,9 +342,9 @@ function Installer() {
           <p>
             <button onClick={openDisc2File}>Disc 2.iso</button> {disc2File || 'Not selected'}
           </p>
-          <p>Select the NHL.com 2021 Interface.rar</p>
+          <p>Select the Interface.zip</p>
           <p>
-            <button onClick={openNhlInterfaceArchiveFile}>NHL.com 2021 Interface .rar</button> {nhlInterfaceArchiveFile || 'Not selected'}
+            <button onClick={openNhlInterfaceArchiveFile}>Interface.zip</button> {nhlInterfaceArchiveFile || 'Not selected'}
           </p>
           <button onClick={() => setInstallerState({status: 'prereq'})}>Back</button>
           <button onClick={install}>Install</button>

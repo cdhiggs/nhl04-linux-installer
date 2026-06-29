@@ -25,7 +25,7 @@ if ! [ -f "$INSTALLDIR/disc2/SAR.exe" ] ; then
 fi
 
 echo "Downloading Wine-TkG"
-curl -o "$INSTALLDIR/temp/wine.tar.xz" -L https://github.com/Kron4ek/Wine-Builds/releases/download/10.15/wine-10.15-staging-tkg-amd64-wow64.tar.xz
+curl -o "$INSTALLDIR/temp/wine.tar.xz" -L https://github.com/Kron4ek/Wine-Builds/releases/download/11.11/wine-11.11-staging-tkg-amd64-wow64.tar.xz
 if [ $? -ne 0 ] ; then
     abort_and_cleanup "Failed to download Wine-TkG"
 fi
@@ -33,7 +33,7 @@ echo "Extracting Wine-TkG"
 tar -xf "$INSTALLDIR/temp/wine.tar.xz" -C "$INSTALLDIR"
 
 echo "Downloading dxvk"
-curl -o "$INSTALLDIR/temp/dxvk.tar.gz" -L https://github.com/doitsujin/dxvk/releases/download/v2.6.2/dxvk-2.6.2.tar.gz
+curl -o "$INSTALLDIR/temp/dxvk.tar.gz" -L https://github.com/doitsujin/dxvk/releases/download/v2.7.1/dxvk-2.7.1.tar.gz
 if [ $? -ne 0 ] ; then
     abort_and_cleanup "Failed to download dxvk"
 fi
@@ -41,7 +41,7 @@ mkdir "$INSTALLDIR/dxvk"
 echo "Extracting dxvk"
 tar -xf "$INSTALLDIR/temp/dxvk.tar.gz" -C "$INSTALLDIR/dxvk"
 
-WINEDIR="$INSTALLDIR/wine-10.15-staging-tkg-amd64-wow64/bin"
+WINEDIR="$INSTALLDIR/wine-11.11-staging-tkg-amd64-wow64/bin"
 
 echo "Initializing Wine prefix"
 
@@ -76,10 +76,7 @@ if [ $? -ne 0 ] ; then
     abort_and_cleanup "Failed to update registry, exiting."
 fi
 
-WINEPREFIX="$INSTALLDIR/prefix" "$WINEDIR/wine" reg add "HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides" /v dinput /t REG_SZ /d native,builtin
-if [ $? -ne 0 ] ; then
-    abort_and_cleanup "Failed to update registry, exiting."
-fi
+
 
 WINEPREFIX="$INSTALLDIR/prefix" "$WINEDIR/wine" reg add "HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides" /v mscoree /t REG_SZ /d disabled
 if [ $? -ne 0 ] ; then
