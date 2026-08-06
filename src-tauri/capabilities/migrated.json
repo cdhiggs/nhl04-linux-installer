@@ -38,7 +38,7 @@
             "-aoa"
           ],
           "cmd": "",
-          "name": ".sidecar/7-Zip.AppImage",
+          "name": ".sidecar/7zzs",
           "sidecar": true
         },
         {

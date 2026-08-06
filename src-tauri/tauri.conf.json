@@ -9,7 +9,7 @@
     "active": true,
     "targets": "appimage",
     "externalBin": [
-      ".sidecar/7-Zip.AppImage",
+      ".sidecar/7zzs",
       ".sidecar/nhl-04-curl",
       ".sidecar/nhl-04-xdg-open",
       ".sidecar/nhl-04-install",
@@ -28,7 +28,7 @@
   },
   "productName": "nhl04-linux-installer",
   "mainBinaryName": "nhl04-linux-installer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "identifier": "com.jeremieamano.nhl04",
   "plugins": {},
   "app": {

@@ -147,21 +147,21 @@ function Installer() {
     );
     setInstallerState({status: 'installing'})
     try {
-      const disc1ExtractCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
+      const disc1ExtractCommand = Command.sidecar('.sidecar/7zzs', [
         'x',
         disc1File,
         `-o${installDir}/disc1`,
         '-aoa',
       ]);
       await runCommandAndAppendToConsole(disc1ExtractCommand);
-      const disc2ExtractCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
+      const disc2ExtractCommand = Command.sidecar('.sidecar/7zzs', [
         'x',
         disc2File,
         `-o${installDir}/disc2`,
         '-aoa',
       ]);
       await runCommandAndAppendToConsole(disc2ExtractCommand);
-      const nhlInterfaceExtractCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
+      const nhlInterfaceExtractCommand = Command.sidecar('.sidecar/7zzs', [
         'x',
         nhlInterfaceArchiveFile,
         `-o${installDir}/interface`,
@@ -175,7 +175,7 @@ function Installer() {
         'https://github.com/vod04/launcher/raw/master/launcher.zip'
       ]);
       await runCommandAndAppendToConsole(nhlLauncherDownloadCommand);
-      const nhlLauncherExtractCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
+      const nhlLauncherExtractCommand = Command.sidecar('.sidecar/7zzs', [
         'x',
         `${installDir}/launcher.zip`,
         `-o${installDir}/launcher`,
@@ -190,7 +190,7 @@ function Installer() {
         'https://github.com/samuelgr/Xidi/releases/download/v4.3.1/Xidi-v4.3.1.zip'
       ]);
       await runCommandAndAppendToConsole(xidiDownloadCommand);
-      const xidiExtractCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
+      const xidiExtractCommand = Command.sidecar('.sidecar/7zzs', [
         'x',
         `${installDir}/xidi.zip`,
         `-o${installDir}/xidi`,

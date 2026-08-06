@@ -184,7 +184,7 @@ function RosterInstaller() {
   }
 
   const extractAndInstallArchive = async (archive: string) => {
-    const extractAndInstallArchiveCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
+    const extractAndInstallArchiveCommand = Command.sidecar('.sidecar/7zzs', [
       'x',
       archive,
       `-o${installDir}/prefix/drive_c/Program Files (x86)/EA SPORTS/NHL 2004/`,
@@ -228,7 +228,7 @@ function RosterInstaller() {
       await extractAndInstallArchive(masksArchiveFile);
       await extractAndInstallArchive(goalHornsArchiveFile);
 
-      const rosterExtractCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
+      const rosterExtractCommand = Command.sidecar('.sidecar/7zzs', [
         'x',
         rosterArchiveFile,
         `-o${installDir}/roster`,
@@ -236,7 +236,7 @@ function RosterInstaller() {
       ]);
       await runCommandAndAppendToConsole(rosterExtractCommand);
 
-      const pbpExtractCommand = Command.sidecar('.sidecar/7-Zip.AppImage', [
+      const pbpExtractCommand = Command.sidecar('.sidecar/7zzs', [
         'x',
         pbpArchiveFile,
         `-o${installDir}/pbp`,
