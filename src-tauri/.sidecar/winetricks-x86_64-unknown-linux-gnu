@@ -23,6 +23,11 @@ if [[ $PRETTY_NAME == *"SteamOS" ]]; then
     echo "Applying SteamOS env vars"
     export PATH="$INSTALLDIR/temp/cabextract/usr/bin:$PATH"
     export LD_LIBRARY_PATH="$("$HOME/.steam/root/ubuntu12_32/steam-runtime/run.sh" --print-steam-runtime-library-paths)"
+    # The Steam runtime's libcurl is incompatible with the system curl binary,
+    # so run curl with the system libraries only (wine still gets the runtime paths)
+    curl() {
+        LD_LIBRARY_PATH="" command curl "$@"
+    }
 fi
 
 # This is a UTF-8 file
