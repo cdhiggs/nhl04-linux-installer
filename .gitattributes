@@ -1,0 +1,6 @@
+# These are executed as scripts inside the Linux AppImage; CRLF line endings
+# break their shebang lines (e.g. "#!/bin/bash\r" is not a valid interpreter
+# path), so force LF regardless of platform/core.autocrlf settings.
+src-tauri/.sidecar/7zzs-* binary
+src-tauri/.sidecar/nhl-04-* text eol=lf
+src-tauri/.sidecar/winetricks-* text eol=lf
