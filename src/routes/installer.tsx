@@ -7,6 +7,19 @@ import { readDir } from "@tauri-apps/plugin-fs";
 import Hyperlink from "../components/hyperlink";
 import EllipsisLoader from "../components/ellipsis-loader";
 
+// Command rejections can be a {code, error} object, a plain {code} close
+// payload, or a thrown Error, depending on where the failure happened.
+// Stringifying those directly in a template literal gives "[object Object]".
+function describeError(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === 'object' && e !== null) {
+    const { code, error } = e as { code?: number, error?: unknown };
+    if (error !== undefined) return `${error}`;
+    if (code !== undefined) return `process exited with code ${code}`;
+  }
+  return `${e}`;
+}
+
 interface InstallerState {
   installDir: string | undefined,
   disc1File: string | undefined,
@@ -88,40 +101,69 @@ function Installer() {
   }
 
 
+  const appendToConsole = (data: string) => {
+    reactSetInstallerState(prevInstallerState => ({
+      ...prevInstallerState,
+      scriptStdOutAndErr: `${prevInstallerState.scriptStdOutAndErr}${data}`,
+      latestStdOutOrErr: data,
+    }));
+  }
+
   const runCommandAndAppendToConsole = async (command: Command<string>, throwOnErrorCode: boolean = true, resolveOnLogPattern?: RegExp): Promise<{code: number}> => {
     return new Promise((resolve, reject) => {
+      let settled = false;
+      const rejectOnce = (reason: unknown) => {
+        if (settled) return;
+        settled = true;
+        reject(reason);
+      }
+      const resolveOnce = (payload: {code: number}) => {
+        if (settled) return;
+        settled = true;
+        resolve(payload);
+      }
+
+      appendToConsole(`\n$ ${JSON.stringify(command)}\n`);
+
       command.stdout.on('data', (data) => {
         console.log(data);
-        reactSetInstallerState(prevInstallerState => ({
-          ...prevInstallerState,
-          scriptStdOutAndErr: `${prevInstallerState.scriptStdOutAndErr}${data}`,
-          latestStdOutOrErr: data,
-        }));
+        appendToConsole(data);
         if (resolveOnLogPattern?.test(data)) {
-          resolve({code: 0});
+          resolveOnce({code: 0});
         }
       })
       command.stderr.on('data', (data) => {
         console.error(data);
-        reactSetInstallerState(prevInstallerState => ({
-          ...prevInstallerState,
-          scriptStdOutAndErr: `${prevInstallerState.scriptStdOutAndErr}${data}`,
-          latestStdOutOrErr: data,
-        }));
+        appendToConsole(data);
         if (resolveOnLogPattern?.test(data)) {
-          resolve({code: 0});
+          resolveOnce({code: 0});
         }
       })
+      // Fires if the child process itself errors out (e.g. killed, IO error)
+      // after having successfully spawned.
+      command.on('error', (error) => {
+        console.error('Command error:', error);
+        appendToConsole(`\n[command error] ${error}\n`);
+        rejectOnce({code: -1, error});
+      })
       command.on('close', (payload => {
+        appendToConsole(`\n[exited with code ${payload.code}]\n`);
         if (payload.code !== 0 && throwOnErrorCode) {
-          reject({code: payload.code});
+          rejectOnce({code: payload.code});
         }
         else if (!resolveOnLogPattern) {
-          resolve({code: payload.code ?? 0});
+          resolveOnce({code: payload.code ?? 0});
         }
       }))
-      console.log(command); 
-      command.spawn();
+      console.log(command);
+      // spawn() rejects if the process never starts (e.g. sidecar binary
+      // missing or not executable); without this the install would hang
+      // forever with no indication of what went wrong.
+      command.spawn().catch((error) => {
+        console.error('Failed to spawn command:', error);
+        appendToConsole(`\n[failed to spawn] ${error}\n`);
+        rejectOnce({code: -1, error});
+      });
     });
   }
 
@@ -207,14 +249,16 @@ function Installer() {
       setInstallerState({
         status: 'error',
       })
+      console.error(e);
       await message(
-        `Installation failed:\n${e}`,
+        `Installation failed:\n${describeError(e)}`,
         {
-          title: 'Installation failed', 
+          title: 'Installation failed',
           kind: 'error'
         },
       )
-      console.error(e);
+      // Don't fall through to patching when installation itself failed.
+      return;
     }
 
     // Patch the installation
@@ -251,10 +295,11 @@ function Installer() {
       setInstallerState({
         status: 'error',
       })
+      console.error(e);
       await message(
-        `Patching failed:\n${e}`,
+        `Patching failed:\n${describeError(e)}`,
         {
-          title: 'Patching failed', 
+          title: 'Patching failed',
           kind: 'error'
         },
       )
